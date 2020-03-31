@@ -47,10 +47,9 @@ function read_data(doc)
         return(C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,bj,prejj,cpij)
     end
 end
-
-doc = "../data/Embedded.txt"
+#doc = "../data/5C_3Type_2QC.txt"
 #doc = "../data/QCSP_example.txt"
-#doc = "../data/10C_4Type_2QC.txt"
-#doc = "./data/60C_10Type_LessDense_2QC_6TV_mod.txt"
+doc = "../data/10C_4Type_2QC.txt"
+#doc = "../data/60C_10Type_LessDense_2QC_6TV_mod.txt"
 #C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,qj,sj,prejj,cpij = read_data(doc)
 C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,bj,prejj,cpij = read_data(doc)

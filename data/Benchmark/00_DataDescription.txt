@@ -1,0 +1,15 @@
+1) Number of Containers - C
+2) Number of Positions - P
+3) Number of compatible positions X Container combinations - cp
+4) Number of quay cranes - Q
+5) Number of bays - J
+6) Quay crane travel time - [mins\bay]
+7) Clearance - [bays]
+8) The class for the containers
+9) The class for the positions
+10) The bay number of each position
+11) The next is a position x position matrix indicating the position's precedences.
+12) The next cp lines describe the position X container combinations and \tau_{cp}
+    12.1) In the lines the first entry is the container ID
+    12.2) The second entry is the position ID
+    12.3) The last entry is the travel time (\tau_{cp}) [mins]
