@@ -1,12 +1,12 @@
-include("../src/read_data.jl")
-include("../src/init.jl")
-include("../src/data_manipulation.jl")
+include("../src/input_data/read_data.jl")
+include("../src/basics/init.jl")
+include("../src/input_data/data_manipulation.jl")
 #include("../src/functions.jl")
 
 possible_tasks = Array{Task, 1}()
 tasks_by_position = Dict{Int, Array}()
 prec = Dict{Int, Array}()
-task_times = zeros(Int8, P, C)
+task_times = zeros(Int, P, C)
 
 for p = 1:P
     l=[]

@@ -1,12 +1,12 @@
 function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks_by_pos::Dict)
-    #H=tt*C*(J-1-(delta+1)*(Q-1))
-    H=tt*C*(J-1)
+    H=tt*C*(J-1-(delta+1)*(Q-1))
+    #H=tt*C*(J-1)
     print("H0 = "); print(H)
     for (key, value) in tasks_by_position
         h=0
         for t in value
             if t.t > h
-                h=5*t.t
+                h=2*t.t
             end
         end
         H=H+h

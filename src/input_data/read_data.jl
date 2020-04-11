@@ -22,18 +22,14 @@ end
 
 function read_data(doc)
     open(doc, "r") do f
-        n = 11
+        n = 7
         C = parse(Int, readline(f)) #number of containers
         P = parse(Int, readline(f)) #number of positions
         CP = parse(Int, readline(f)) #number of compatible combinations
-        S = parse(Int, readline(f)) #number of transport vehicles
         Q = parse(Int, readline(f)) #number of quay cranes
         J = parse(Int, readline(f)) #number of bays
         tt = parse(Int, readline(f)) #quay crane travel time per bay
         d = parse(Int, readline(f)) #clearance, in number of bays
-        mt = parse(Int, readline(f)) #maximum time
-        beta = parse(Int, readline(f)) #beta
-        EFT = parse(Int, readline(f)) #Expected Finishing Time
 
         n, ci = read_vector(doc, n) #container class vector
         n, pj = read_vector(doc, n) #position class vector
@@ -44,12 +40,12 @@ function read_data(doc)
         n, prejj = read_matrix(P, P, doc, n) #position precedence matrix
         n, cpij = read_matrix(CP, 3, doc ,n) #combination c, p, time(cp)
         #return(C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,qj,sj,prejj,cpij)
-        return(C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,bj,prejj,cpij)
+        return(C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij)
     end
 end
 #doc = "../data/5C_3Type_2QC.txt"
 #doc = "../data/QCSP_example.txt"
-doc = "../data/10C_4Type_2QC.txt"
-#doc = "../data/60C_10Type_LessDense_2QC_6TV_mod.txt"
+#doc = "../data/10C_4Type_2QC.txt"
+doc = "../data/Benchmark/60C_10Type_LessDense_2QC.txt"
 #C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,qj,sj,prejj,cpij = read_data(doc)
-C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,bj,prejj,cpij = read_data(doc)
+C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
