@@ -49,12 +49,21 @@ function init_ls(CTS::Constants)
     return(LS)
 end
 
-#init all QC, where qj=data_matrix and current_bay=top_left(qj)
+function init_bay(q::Int, CTS::Constants)
+    if q == 1
+        return(1)
+    elseif  q == CTS.Q
+        return(CTS.J)
+    else
+        return(floor(CTS.J/(CTS.Q-1)*(q-1)))
+    end
+end
+
 function init_qc(CTS::Constants)
     QC=Array{QuayCrane, 1}()
     for q = 1:CTS.Q
         qc_pos = subset_bay(CTS, q)
-        push!(QC, QuayCrane(q, qc_pos, "idle", 0, minimum(qc_pos), minimum(qc_pos), Array{Task, 1}()))
+        push!(QC, QuayCrane(q, qc_pos, "idle", 0, init_bay(q, CTS), init_bay(q, CTS), Array{Task, 1}()))
     end
     return(QC)
 end

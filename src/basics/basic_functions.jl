@@ -7,7 +7,7 @@ function next_time_period(TIME::Timer, QC::Array{QuayCrane, 1})
         if qc.status == "moving"
             if  qc.next_bay < qc.current_bay
                 qc.current_bay -= CTS.tt
-            elseif qc.current_bay < qc.next_bay
+            elseif qc.next_bay > qc.current_bay
                 qc.current_bay += CTS.tt
             end
         end
@@ -15,17 +15,38 @@ function next_time_period(TIME::Timer, QC::Array{QuayCrane, 1})
         if qc.time_left > 1
             qc.time_left -= 1
         elseif qc.time_left == 1
-            if length(qc.task_buffer) > 0 && qc.status != "waiting to move"
-                qc.time_left = 2*qc.task_buffer[1].t
-                qc.status = "loading"
-                deleteat!(qc.task_buffer, 1)
-            elseif length(qc.task_buffer) > 0 && qc.status == "waiting to move"
-                qc.time_left = travel_time(qc.current_bay, qc.task_buffer[1].b, CTS)
-                qc.status = "moving"
+            if length(qc.task_buffer) > 0
+                if qc.status == "loading"
+                    if qc.current_bay == qc.task_buffer[1].b
+                        qc.time_left = 2*qc.task_buffer[1].t
+                        qc.status = "loading"
+                        deleteat!(qc.task_buffer, 1)
+                    else
+                        qc.time_left = travel_time(qc.current_bay, qc.task_buffer[1].b, CTS)
+                        qc.next_bay = qc.task_buffer[1].b
+                        qc.status = "moving"
+                    end
+                elseif qc.status == "moving" || qc.status == "waiting to load"
+                    if qc.task_buffer[1].t ==0
+                        qc.status = "idle"
+                    else
+                        qc.status = "loading"
+                    end
+                    qc.time_left = 2*qc.task_buffer[1].t
+                    deleteat!(qc.task_buffer, 1)
+                elseif qc.status == "waiting to move"
+                    qc.time_left = travel_time(qc.current_bay, qc.task_buffer[1].b, CTS)
+                    qc.next_bay = qc.task_buffer[1].b
+                    qc.status = "moving"
+                end
             else
                 qc.time_left = 0
                 qc.status = "idle"
+                qc.task_buffer = Array{Task, 1}()
             end
+        elseif qc.time_left == 0
+            qc.time_left = 0
+            qc.status = "idle"
         end
         if qc.status == "idle"
             push!(l, qc.q)
@@ -65,7 +86,7 @@ end
 function update_wait_quay_crane(TIME::Timer, QC::Array{QuayCrane, 1}, task::Task, q::Int, move_q::Int, move_bay::Int, CTS::Constants)
     if task.b == QC[q].current_bay
         QC[q].time_left = travel_time(QC[move_q].current_bay, QC[move_q].next_bay, CTS)
-        QC[q].status = "waiting to start"
+        QC[q].status = "waiting to load"
         QC[q].next_bay = QC[q].current_bay
         push!(QC[q].task_buffer, task)
     elseif travel_time(QC[q].current_bay, task.b, CTS) >= travel_time(QC[move_q].current_bay, QC[move_q].next_bay, CTS)
@@ -94,6 +115,11 @@ function update_wait_load_seq(TIME::Timer, LS::LoadingSequence, QC::Array{QuayCr
     push!(LS.loaded_cont,task.c)
 end
 
+function update_dummy_load_seq(TIME::Timer, LS::LoadingSequence, QC::Array{QuayCrane, 1}, move_q::Int, move_bay::Int, CTS::Constants)
+    start_time = TIME.period + travel_time(QC[move_q].current_bay, move_bay, CTS)
+    push!(LS.order, (task = Task(0, move_bay, 0, 0), start_time=start_time, qc=move_q))
+end
+
 function add_task(task::Task, q::Int, TIME::Timer, LS::LoadingSequence, QC::Array{QuayCrane, 1}, CTS::Constants)
     update_load_seq(TIME, LS, QC, task, q, CTS)
     update_quay_crane(TIME, QC, task, q, CTS)
@@ -103,6 +129,7 @@ end
 function add_task_move(task::Task, q::Int, move_q::Int, move_bay::Int, move_status::String, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     if move_status == "idle"
         update_quay_crane(TIME, QC, Task(0, move_bay, 0, 0), move_q, CTS)
+        update_dummy_load_seq(TIME, LS, QC, move_q, move_bay, CTS)
         deleteat!(TIME.available_cranes, findall(x->x==move_q, TIME.available_cranes))
         update_wait_quay_crane(TIME, QC, task, q, move_q, move_bay, CTS)
         update_wait_load_seq(TIME, LS, QC, task, q, move_q, move_bay, CTS)
@@ -112,4 +139,10 @@ function add_task_move(task::Task, q::Int, move_q::Int, move_bay::Int, move_stat
         update_wait_load_seq(TIME, LS, QC, task, q, move_q, move_bay, CTS)
         deleteat!(TIME.available_cranes, findall(x->x==q, TIME.available_cranes))
     end
+end
+
+function add_move(move_q::Int, move_bay::Int, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+    update_quay_crane(TIME, QC, Task(0, move_bay, 0, 0), move_q, CTS)
+    update_dummy_load_seq(TIME, LS, QC, move_q, move_bay, CTS)
+    deleteat!(TIME.available_cranes, findall(x->x==move_q, TIME.available_cranes))
 end

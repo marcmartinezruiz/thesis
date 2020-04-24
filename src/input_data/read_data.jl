@@ -10,8 +10,8 @@ function read_vector(doc, n)
 end
 
 function read_matrix(P, Q, doc, n)
-    matrix = Matrix{Int8}(undef, P, Q)
-    data = readdlm(doc, skipstart=n)
+    matrix = zeros(Int, P, Q)
+    data = readdlm(doc, skipstart=n, use_mmap=true)
     for i = 1:P
         for j = 1:Q
             matrix[i,j] = data[i,j]
@@ -43,9 +43,3 @@ function read_data(doc)
         return(C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij)
     end
 end
-#doc = "../data/5C_3Type_2QC.txt"
-#doc = "../data/QCSP_example.txt"
-#doc = "../data/10C_4Type_2QC.txt"
-doc = "../data/Benchmark/60C_10Type_LessDense_2QC.txt"
-#C,P,CP,S,Q,J,tt,d,mt,beta,EFT,ci,pj,qj,sj,prejj,cpij = read_data(doc)
-C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
