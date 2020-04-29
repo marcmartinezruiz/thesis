@@ -1,96 +1,3 @@
-function remaining_bay_time(j::Int, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
-    total = 0
-    count = 0
-    for p = 1:CTS.P
-        if bj[p] == j
-            total += tasks_by_w[p].t
-        end
-    end
-    for t in LS.order
-        if t.task.b == j
-            count += t.task.t
-        end
-    end
-    return(total - count)
-end
-
-function bays_work_load(tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
-    work_load = Array{NamedTuple{(:j, :remaining_time),Tuple{Int, Int}}, 1}()
-    for j = 1:CTS.J
-        if remaining_bay_time(j, tasks_by_w, bj, LS, CTS) > 0
-            push!(work_load, (j=j, remaining_time=remaining_bay_time(j, tasks_by_w, bj, LS, CTS)))
-        end
-    end
-    if length(work_load) > 0
-        sort!(work_load, by = x->x.remaining_time, rev=true)
-    end
-    return(work_load)
-end
-
-function total_remaining_time(work_load::Array{NamedTuple{(:j, :remaining_time),Tuple{Int, Int}}, 1})
-    total = 0
-    for bay in work_load
-        total += bay.remaining_time
-    end
-    return(total)
-end
-
-function order_by_maximal_bay(rand_flag::Bool, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
-    #calculate remaining times
-    work_load = bays_work_load(tasks_by_w, bj, LS, CTS)
-    total = total_remaining_time(work_load)
-    #order the bays (maximal + random)
-    order = Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}()
-    for bay in work_load
-        if rand_flag == true
-            push!(order, (j=bay.j, prob=(bay.remaining_time/total)*rand()))
-        else
-            push!(order, (j=bay.j, prob=(bay.remaining_time/total)))
-        end
-    end
-    sort!(order, by = x->x.prob, rev=true)
-    return(order)
-end
-
-function order_by_dist(rand_flag::Bool, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, QC::Array{QuayCrane, 1}, CTS::Constants)
-    #calculate remaining times
-    work_load = bays_work_load(tasks_by_w, bj, LS, CTS)
-    total = total_remaining_time(work_load)
-    #order the bays (maximal + random)
-    order = Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}()
-    for bay in work_load
-        min_dist = CTS.J
-        max_dist = 0
-        i = 1
-        for q in QC
-            if bay.j in q.available_bays || q.status == "idle"
-                dist = abs(bay.j - q.current_bay)^2
-                if dist < min_dist
-                    min_dist = dist
-                elseif dist > max_dist
-                    max_dist = dist
-                end
-            end
-        end
-
-        if min_dist > 0
-            if rand_flag == true
-                prob = (bay.remaining_time/total)*(min_dist/max_dist)*rand()
-            else
-                prob = (bay.remaining_time/total)*(min_dist/max_dist)
-            end
-        else
-            prob = (bay.remaining_time/total)*CTS.J
-        end
-
-        push!(order, (j=bay.j, prob=prob))
-    end
-    sort!(order, by = x->x.prob, rev=true)
-    return(order)
-end
-
-
-
 function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     for tuple in order
         target_bay = tuple.j
@@ -108,9 +15,10 @@ function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Fl
                                 available_cranes = [(q, 1)]
                                 break
                             else
-                                #push!(available_cranes, (q, (abs(target_task.b-QC[q].current_bay)^2)/CTS.J*rand()))
-                                push!(available_cranes, (q, (abs(target_task.b-init_bay(q,CTS)^2))))
+                                push!(available_cranes, (q, (abs(target_task.b-QC[q].current_bay)^2)/CTS.J*rand()))
+                                #push!(available_cranes, (q, (abs(target_task.b-init_bay(q, CTS)^2)*rand())))
                                 #push!(available_cranes, (q, (abs(target_task.b-QC[q].current_bay)^2)/CTS.J))
+                                #push!(available_cranes, (q, (abs(target_task.b-init_bay(q, CTS)^2))))
                             end
                         end
                     end
@@ -166,12 +74,12 @@ function randomizedConstructionHeuristic(ind::String, tasks_by_w::Dict{Int, Task
     end
 
     #order according to indicator
-    if ind == "maximal"
-        order = order_by_maximal_bay(true, tasks_by_w, bj, LS, CTS)
-    elseif ind == "minimal"
-        order = reverse(order_by_maximal_bay(true, tasks_by_w, bj, LS, CTS))
-    else
-        order = order_by_dist(true, tasks_by_w, bj, LS, QC, CTS)
+    work_load = order_by_maximal_bay(false, tasks_by_w, bj, LS, CTS)
+    if ind == "dist"
+        order = order_by_dist(true, work_load, QC, CTS)
+    elseif ind == "number"
+        work_load_dist = order_by_dist(false, work_load, QC, CTS)
+        order = order_by_number(true, work_load_dist, QC, CTS)
     end
 
     output = ConstructionHeuristic(order, tasks_by_w, bj, LS, TIME, QC, CTS)

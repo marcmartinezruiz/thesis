@@ -1,5 +1,3 @@
-using JuMP, Gurobi
-
 #function OperationalShippingProblem(beta::Number, bj::Array{Int, 1}, task_times::Array{Int, 2}, CTS::Constants)
 function OperationalShippingProblem(beta::Number, CTS::Constants)
     PP=[p for p in 1:CTS.P]

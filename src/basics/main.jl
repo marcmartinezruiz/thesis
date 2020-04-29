@@ -1,9 +1,10 @@
-
+using JuMP, Gurobi, Statistics, StatsBase
 include("./init.jl")
 include("../input_data/read_data.jl")
 include("../input_data/data_manipulation.jl")
 include("./basic_functions.jl")
 include("./validations.jl")
+include("../heuristics/indicators.jl")
 include("../heuristics/construction_algorithms.jl")
 include("../heuristics/local_search.jl")
 include("../JuMP/JuMP_functions.jl")
@@ -13,8 +14,8 @@ include("../solution_methods/GRASP_algorithm.jl")
 #Read Data
     #ATOM
     #doc = "./data/Benchmark/60C_10Type_LessDense_2QC.txt"
-    #doc = "./data/Benchmark/240C_20Type_LessDense_2QC.txt"
-    doc = "./data/Benchmark/500C_100Type_LessDense_4QC.txt"
+    doc = "./data/Benchmark/240C_20Type_LessDense_2QC.txt"
+    #doc = "./data/Benchmark/500C_100Type_LessDense_4QC.txt"
     #doc = "./data/Benchmark/1000C_100Type_UniformDense_4QC.txt"
     #JUPYTER
     #doc = "../data/Benchmark/240C_20Type_LessDense_2QC.txt"
@@ -58,6 +59,19 @@ end
 H = horizon_plan(C,P,J,Q,tt,d,tasks_by_position)
 CTS = Constants(C,P,J,Q,H,tt,d)
 
+
+
+
+
 best_makespan, best_LS = GRASP_algorithm(0, CTS)
+println(best_makespan)
+while true
+    global best_makespan
+    global best_LS
+    improve, best_LS, best_makespan = remove_single_moves(best_makespan, best_LS, CTS)
+    if improve == false
+        break
+    end
+end
 println(best_makespan)
 plot_solution(best_LS, best_makespan, CTS)

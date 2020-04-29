@@ -59,6 +59,38 @@ function travel_time(current_bay::Int, target_bay::Int, CTS::Constants)
     return(abs(current_bay - target_bay)*CTS.tt)
 end
 
+
+function get_qc_last_time(q::Int, LS::LoadingSequence)
+    for t in reverse(LS.order)
+        if t.qc == q
+            return(t.start_time + 2*t.task.t)
+        end
+    end
+end
+
+function get_qc_start_time(q::Int, LS::LoadingSequence)
+    for t in LS.order
+        if t.qc == q
+            return(t.start_time)
+        end
+    end
+end
+
+function get_qc_last_bay(q::Int, LS::LoadingSequence)
+    for t in reverse(LS.order)
+        if t.qc == q
+            return(t.task.b)
+        end
+    end
+end
+function get_qc_first_bay(q::Int, LS::LoadingSequence)
+    for t in LS.order
+        if t.qc == q
+            return(t.task.b)
+        end
+    end
+end
+
 function update_quay_crane(TIME::Timer, QC::Array{QuayCrane, 1}, task::Task, q::Int, CTS::Constants)
     if task.b == QC[q].current_bay
         QC[q].time_left = 2*task.t

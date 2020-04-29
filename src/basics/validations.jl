@@ -276,7 +276,7 @@ end
 
 
 #check if a solution is correct
-function check_solution(LS::LoadingSequence, QC::Array{QuayCrane, 1}, CTS::Constants)
+function check_solution(LS::LoadingSequence, CTS::Constants)
     #check positions and containers
     if check_tasks(LS, CTS) == false
         println("missing tasks")
@@ -315,12 +315,12 @@ function check_solution(LS::LoadingSequence, QC::Array{QuayCrane, 1}, CTS::Const
                         return(false)
                     end
                     #check that cranes respect bays
-                    if !(value[i].bay in QC[key].available_bays)
+                    if !(value[i].bay in subset_bay(CTS, key))
                         println("wrong bays")
                         return(false)
                     end
                 end
-                if !(value[length(value)].bay in QC[key].available_bays)
+                if !(value[length(value)].bay in subset_bay(CTS, key))
                     println("wrong bays")
                     return(false)
                 end
