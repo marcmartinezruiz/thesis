@@ -34,13 +34,13 @@ mutable struct QuayCrane
     available_bays::Array{Int, 1}
     status::String
     time_left::Int
-    current_bay::Int
+    current_bay::Number
     next_bay::Int
     task_buffer::Array{Task, 1}
 end
 
 function init_timer(CTS::Constants)
-    TIME = Timer(0, CTS.H, collect(1:Q))
+    TIME = Timer(0, CTS.H, collect(1:CTS.Q))
     return(TIME)
 end
 

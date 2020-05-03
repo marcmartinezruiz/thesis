@@ -1,4 +1,4 @@
-function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, crit::String, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     for tuple in order
         target_bay = tuple.j
         #select a task within the target_bay
@@ -15,8 +15,11 @@ function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Fl
                                 available_cranes = [(q, 1)]
                                 break
                             else
-                                push!(available_cranes, (q, (abs(target_task.b-QC[q].current_bay)^2)/CTS.J*rand()))
-                                #push!(available_cranes, (q, (abs(target_task.b-init_bay(q, CTS)^2)*rand())))
+                                if crit == "dist"
+                                    push!(available_cranes, (q, (abs(target_task.b-QC[q].current_bay)^2)/CTS.J*rand()))
+                                else
+                                    push!(available_cranes, (q, (abs(target_task.b-init_bay(q, CTS)^2)*rand())))
+                                end
                                 #push!(available_cranes, (q, (abs(target_task.b-QC[q].current_bay)^2)/CTS.J))
                                 #push!(available_cranes, (q, (abs(target_task.b-init_bay(q, CTS)^2))))
                             end
@@ -59,11 +62,13 @@ function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Fl
             return("Next time period")
         end
     end
-    stucked_bays(order, tasks_by_w, bj, LS, TIME, QC, CTS)
+    if CTS.Q >= 4
+        stucked_bays(order, tasks_by_w, prec, bj, LS, TIME, QC, CTS)
+    end
     return("Next time period")
 end
 
-function randomizedConstructionHeuristic(ind::String, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function randomizedConstructionHeuristic(ind::String, crit::String, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     #check if all cranes are busy
     if length(TIME.available_cranes) == 0
         return("All cranes are busy")
@@ -82,11 +87,11 @@ function randomizedConstructionHeuristic(ind::String, tasks_by_w::Dict{Int, Task
         order = order_by_number(true, work_load_dist, QC, CTS)
     end
 
-    output = ConstructionHeuristic(order, tasks_by_w, bj, LS, TIME, QC, CTS)
+    output = ConstructionHeuristic(order, crit, tasks_by_w, prec, bj, LS, TIME, QC, CTS)
     return(output)
 end
 
-function deterministicConstructionHeuristic(ind::String, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function deterministicConstructionHeuristic(ind::String, crit::String, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     #check if all cranes are busy
     if length(TIME.available_cranes) == 0
         return("All cranes are busy")
@@ -105,86 +110,13 @@ function deterministicConstructionHeuristic(ind::String, tasks_by_w::Dict{Int, T
         order = order_by_dist(false, tasks_by_w, bj, LS, QC, CTS)
     end
 
-    output = ConstructionHeuristic(order, tasks_by_w, bj, LS, TIME, QC, CTS)
+    output = ConstructionHeuristic(order, crit, tasks_by_w, prec, bj, LS, TIME, QC, CTS)
     return(output)
 end
 
-function ls_final(min_q::Int, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
-    #check if all cranes are busy
-    if length(TIME.available_cranes) == 0
-        return("All cranes are busy")
-    end
-    #check if LS is completed
-    if LS.tasks_left == 0
-        return("LS is completed")
-    end
-
-    #order depending on the indicators
-    order = order_by_maximal_bay(false, tasks_by_w, bj, LS, CTS)
-    println(order)
-    for tuple in order
-        target_bay = tuple.j
-        #select a task within the target_bay
-        for p in bay_to_pos(target_bay, bj)
-            if check_prec(LS, tasks_by_w[p], prec) == true
-                if check_loaded_filled(LS, tasks_by_w[p]) == true
-                    target_task = tasks_by_w[p]
-                    #check if any crane that can perform for this task
-                    available_cranes=Array{Tuple{Int, Float64}, 1}()
-                    if min_q in TIME.available_cranes && target_task.b in QC[min_q].available_bays
-                        push!(available_cranes, (min_q, 1))
-                    else
-                        for q in TIME.available_cranes
-                            #randomly select the cranes based on travel time
-                            if target_task.b in QC[q].available_bays
-                                push!(available_cranes, (q, (abs(target_task.b-QC[q].current_bay)^2)/CTS.J))
-                            end
-                        end
-                    end
-                    if length(available_cranes) == 0
-                        break
-                    end
-
-                    #try to add task if there are no clearance problems
-                    for q in sort(available_cranes, by=last)
-                        if check_clearance(QC, q[1], target_bay, CTS) == true && length(QC[q[1]].task_buffer) == 0
-                            add_task(target_task, q[1], TIME, LS, QC, CTS)
-                            return("New task successfuly added. \n---------------")
-                        end
-                    end
-
-                    for q in available_cranes
-                        (check, move_q, move_bay, move_status) = check_double_clearance(QC, q[1], target_bay, CTS)
-                        if  check == true && length(QC[q[1]].task_buffer) == 0
-                            add_task_move(target_task, q[1], move_q, move_bay, move_status, LS, TIME, QC, CTS)
-                            return("New task + neighbour move successfuly added. \n---------------")
-                        end
-                    end
-                    for q in available_cranes
-                        if is_crane_done(q, QC, CTS) == true
-                            if q >= CTS.Q/2
-                                move_bay = floor(((q-1)*(CTS.delta+1)+1 + CTS.J-(CTS.Q-q)*(CTS.delta+1))/2)
-                            else
-                                move_bay = floor(((q-1)*(CTS.delta+1)+1 + CTS.J-(CTS.Q-q)*(CTS.delta+1))/2)+1
-                            end
-                            add_move(q, move_bay, LS, TIME, QC, CTS)
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return("Next time period")
-    # for q in QC
-    #     if q.status != "idle"
-    #         return("Next time period")
-    #     end
-    # end
-    # return(stucked_bays(order, tasks_by_w, bj, LS, TIME, QC, CTS))
-end
 
 
-function stucked_bays(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function stucked_bays(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     for tuple in order
         target_bay = tuple.j
         #select a task within the target_bay

@@ -1,20 +1,24 @@
-function next_time_period(TIME::Timer, QC::Array{QuayCrane, 1})
-    TIME.period += 1
+function next_time_period(TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+    min_unit = 5
+    TIME.period += min_unit
     l = Array{Int, 1}()
     #update all QC atributtes
     for qc in QC
         #update QC position
         if qc.status == "moving"
             if  qc.next_bay < qc.current_bay
-                qc.current_bay -= CTS.tt
+                qc.current_bay -= min_unit/CTS.tt
             elseif qc.next_bay > qc.current_bay
-                qc.current_bay += CTS.tt
+                qc.current_bay += min_unit/CTS.tt
+            end
+            if abs(qc.current_bay-round(qc.current_bay)) < 1e-10
+                qc.current_bay = round(qc.current_bay)
             end
         end
         #update QC time left and status
-        if qc.time_left > 1
-            qc.time_left -= 1
-        elseif qc.time_left == 1
+        if qc.time_left > min_unit
+            qc.time_left -= min_unit
+        elseif qc.time_left == min_unit
             if length(qc.task_buffer) > 0
                 if qc.status == "loading"
                     if qc.current_bay == qc.task_buffer[1].b
@@ -55,8 +59,8 @@ function next_time_period(TIME::Timer, QC::Array{QuayCrane, 1})
     TIME.available_cranes = l
 end
 
-function travel_time(current_bay::Int, target_bay::Int, CTS::Constants)
-    return(abs(current_bay - target_bay)*CTS.tt)
+function travel_time(current_bay::Number, target_bay::Int, CTS::Constants)
+    return(round(abs(current_bay - target_bay)*CTS.tt))
 end
 
 
@@ -92,6 +96,9 @@ function get_qc_first_bay(q::Int, LS::LoadingSequence)
 end
 
 function update_quay_crane(TIME::Timer, QC::Array{QuayCrane, 1}, task::Task, q::Int, CTS::Constants)
+    if abs(QC[q].current_bay-round(QC[q].current_bay)) < 1e-10
+        QC[q].current_bay = round(QC[q].current_bay)
+    end
     if task.b == QC[q].current_bay
         QC[q].time_left = 2*task.t
         QC[q].status = "loading"
@@ -116,6 +123,9 @@ function update_load_seq(TIME::Timer, LS::LoadingSequence, QC::Array{QuayCrane, 
 end
 
 function update_wait_quay_crane(TIME::Timer, QC::Array{QuayCrane, 1}, task::Task, q::Int, move_q::Int, move_bay::Int, CTS::Constants)
+    if abs(QC[q].current_bay-round(QC[q].current_bay)) < 1e-10
+        QC[q].current_bay = round(QC[q].current_bay)
+    end
     if task.b == QC[q].current_bay
         QC[q].time_left = travel_time(QC[move_q].current_bay, QC[move_q].next_bay, CTS)
         QC[q].status = "waiting to load"

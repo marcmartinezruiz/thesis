@@ -1,5 +1,4 @@
-#function OperationalShippingProblem(beta::Number, bj::Array{Int, 1}, task_times::Array{Int, 2}, CTS::Constants)
-function OperationalShippingProblem(beta::Number, CTS::Constants)
+function OperationalShippingProblem(beta::Number, task_times::Array{Int, 2}, bj::Array{Int,1}, CTS::Constants)
     PP=[p for p in 1:CTS.P]
     CC=[c for c in 1:CTS.C]
     common_PP = [0 for p in 1:CTS.P]
@@ -28,10 +27,10 @@ function OperationalShippingProblem(beta::Number, CTS::Constants)
         @objective(model, Min, sum(t_task[p] for p in PP) + beta*sum(t_task[p] for p in common_PP))
     end
     #constraints regarding tasks selection (position-container combination)
-    @constraint(model, [i=1:CTS.C], sum(w[p,i] for p in subset_pos(PP, tasks_by_position, i)) == 1)
-    @constraint(model, [p=1:CTS.P], sum(w[p,i] for i in subset_pos(CC, tasks_by_position, p)) == 1)
+    @constraint(model, [i=1:CTS.C], sum(w[p,i] for p in subset_pos(PP, task_times, i)) == 1)
+    @constraint(model, [p=1:CTS.P], sum(w[p,i] for i in subset_pos(CC, task_times, p)) == 1)
 
-    @constraint(model, [p=1:CTS.P], t_task[p] == sum(task_times[p,i]*w[p,i] for i in subset_pos(CC, tasks_by_position, p)))
+    @constraint(model, [p=1:CTS.P], t_task[p] == sum(task_times[p,i]*w[p,i] for i in subset_pos(CC, task_times, p)))
 
     #solution
     @time JuMP.optimize!(model) # Old syntax: status = JuMP.solve(model)
@@ -46,7 +45,7 @@ function OperationalShippingProblem(beta::Number, CTS::Constants)
 end
 
 
-function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, CTS::Constants)
+function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, task_times::Array{Int, 2}, bj::Array{Int,1}, CTS::Constants)
     T=P+1
     PP=[p for p in 1:P]
     PPP=[p for p in 0:T]
@@ -105,10 +104,10 @@ function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, CTS::Constan
     @constraint(model, [i=1:C], w[T,i] == 0)
 
     #constraints regarding tasks selection (position-container combination)
-    @constraint(model, [i=1:C], sum(w[p,i] for p in subset_pos(PP, tasks_by_position, i)) == 1)
-    @constraint(model, [p=1:P], sum(w[p,i] for i in subset_pos(CC, tasks_by_position, p)) == 1)
+    @constraint(model, [i=1:C], sum(w[p,i] for p in subset_pos(PP, task_times, i)) == 1)
+    @constraint(model, [p=1:P], sum(w[p,i] for i in subset_pos(CC, task_times, p)) == 1)
 
-    @constraint(model, [p=1:P], t_task[p] == sum(task_times[p,i]*w[p,i] for i in subset_pos(CC, tasks_by_position, p)))
+    @constraint(model, [p=1:P], t_task[p] == sum(task_times[p,i]*w[p,i] for i in subset_pos(CC, task_times, p)))
 
     #relate crane times and makespan
     @constraint(model, [q=1:Q], t_crane[q] <= t_load[T])
@@ -208,5 +207,6 @@ function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, CTS::Constan
     sol_w[T] = 0
 
     #compute Loading Sequence
-    return(makespan, get_math_ls(sol_x, sol_w, CTS))
+    #return(makespan, get_math_ls(sol_x, sol_w, CTS))
+    return(makespan, sol_x, sol_w)
 end

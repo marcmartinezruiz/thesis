@@ -75,13 +75,15 @@ function check_loaded_filled(LS::LoadingSequence, task::Task)
 end
 
 #check position precedences
-function check_prec(LS::LoadingSequence, task::Task, precedences::Dict)
-    for req in precedences[task.p]
-        if !(req in LS.filled_pos)
-            #print("trying to add position "*string(task.p)*", but still missing positions: ")
-            #print(setdiff(precedences[task.p], LS.filled_pos))
-            #print("\n")
-            return(false)
+function check_prec(LS::LoadingSequence, task::Task, prec::Dict{Int, Array})
+    if length(prec[task.p]) > 0
+        for req in prec[task.p]
+            if !(req in LS.filled_pos)
+                #print("trying to add position "*string(task.p)*", but still missing positions: ")
+                #print(setdiff(precedences[task.p], LS.filled_pos))
+                #print("\n")
+                return(false)
+            end
         end
     end
     return(true)
@@ -91,7 +93,7 @@ end
 function check_tasks(LS::LoadingSequence, CTS::Constants)
     deleteat!(LS.filled_pos, findall(x->x==0, LS.filled_pos))
     deleteat!(LS.loaded_cont, findall(x->x==0, LS.loaded_cont))
-    if LS.tasks_left == 0 && length(setdiff(collect(1:P), LS.filled_pos)) == 0 && length(setdiff(collect(1:C), LS.loaded_cont)) == 0
+    if LS.tasks_left == 0 && length(setdiff(collect(1:CTS.P), LS.filled_pos)) == 0 && length(setdiff(collect(1:CTS.C), LS.loaded_cont)) == 0
         return(true)
     else
         return(false)
@@ -276,7 +278,7 @@ end
 
 
 #check if a solution is correct
-function check_solution(LS::LoadingSequence, CTS::Constants)
+function check_solution(prec::Dict{Int, Array}, LS::LoadingSequence, CTS::Constants)
     #check positions and containers
     if check_tasks(LS, CTS) == false
         println("missing tasks")
@@ -300,7 +302,7 @@ function check_solution(LS::LoadingSequence, CTS::Constants)
         # println()
         # println("|||||||||||   "*string(clock)*"   ||||||||||||||")
         # println()
-        current_cranes=Array{Tuple{Int, Int}, 1}()
+        current_cranes=Array{Tuple{Int, Number}, 1}()
         # println("LOADING CRANE")
         for (key, value) in QC_MOVES
             if clock == 1
@@ -384,7 +386,7 @@ function plot_solution(LS::LoadingSequence, makespan::Int, CTS::Constants)
     #plot scale
     xsc  = Scale.x_continuous(minvalue=0, maxvalue=makespan)
     ysc  = Scale.y_continuous(minvalue=0, maxvalue=CTS.J+1)
-    xtk = collect(0:30:makespan)
+    xtk = collect(0:1800:makespan)
     push!(xtk, makespan)
     ytk = collect(1:CTS.J)
     #plot(df, x = :Start, xend = :Time, y = :Bay, yend = :Bay, color = :QuayCrane, Geom.segment(filled=false), Theme(line_width=1cm, major_label_font="CMU Serif",minor_label_font="CMU Serif",

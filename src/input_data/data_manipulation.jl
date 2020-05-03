@@ -1,7 +1,6 @@
-function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks_by_pos::Dict)
+function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks_by_position::Dict{Int, Array{Task, 1}})
     H=tt*C*(J-1-(delta+1)*(Q-1))
     #H=tt*C*(J-1)
-    print("H0 = "); print(H)
     for (key, value) in tasks_by_position
         h=0
         for t in value
@@ -14,11 +13,8 @@ function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks
     return(H)
 end
 
-function subset_pos(set::Array, dict_by_position::Dict, pos::Int)
-    sub_set = Array{Int, 1}()
-    for task in dict_by_position[pos]
-        push!(sub_set, task.c)
-    end
+function subset_pos(dummy::Array, set::Array{Int, 2}, pos_cont::Int)
+    sub_set = findall(x->x!=0, set[pos_cont,:])
     return(sub_set)
 end
 

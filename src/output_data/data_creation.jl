@@ -1,5 +1,3 @@
-using DelimitedFiles
-
 function read_vector(doc::String, n::Int)
     vector = Array{Int, 1}()
     data = readdlm(doc, skipstart=n)
@@ -43,22 +41,16 @@ function read_initial_data(doc::String)
     end
 end
 
-#doc = "../data/60C_25Type_LessDense_2QC_6TV.txt"
-#C,P,CP,S,Q,mt,beta,EFT,ci,pj,qj,sj,prejj,cpij = read_initial_data(doc)
+function new_times(cpij::Array{Int, 2}, P::Int, CP::Int, S::Int)
+    for i = 1:CP
+        cpij[i,3] = cpij[i,3]*60/S
+    end
+end
 
-
-
-function new_bays(x::Int, P::Int)
-    J = 20
+function new_bays(J::Int, P::Int)
     l = Array{Int, 1}()
     bj = Array{Int, 1}()
     prejj = zeros(Int, P, P)
-    #number of bays depending on the vessel size
-    if x == 60
-        J = 6
-    elseif x == 240
-        J = 12
-    end
 
     for i=1:P
         for s=1:i-1
@@ -90,7 +82,7 @@ function new_bays(x::Int, P::Int)
             push!(bj, n)
         end
     end
-    return(J, bj, prejj)
+    return(bj, prejj)
 end
 
 
@@ -139,4 +131,49 @@ function write_file(output::String, C::Int,P::Int,CP::Int,Q::Int,J::Int,tt::Int,
 
     end
 
+end
+
+
+function create_new_benchmark()
+    for file in readdir("./data/OldBenchmark/")
+        if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
+            doc = "./data/OldBenchmark/"*file
+            if file[end-7] == 6
+                output = "./data/Benchmark/"*file[1:end-8]
+            else
+                output = "./data/Benchmark/"*file[1:end-9]
+            end
+            #number of bays depending on the vessel size
+            J = 20
+            if file[1:2]=="60"
+                J = 6
+            elseif file[1:3] == "240"
+                J = 12
+            end
+
+            C,P,CP,S,Q,mt,beta,EFT,ci,pj,qj,sj,prejj,cpij = read_initial_data(doc)
+            #data modifications
+            bj, prejj = new_bays(J, P)
+            new_times(cpij, P, CP, S)
+            write_file(output,C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij)
+        end
+    end
+end
+
+function create_new_benchmark_version2()
+    for file in readdir("./data/Benchmark/")
+        if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
+            doc = "./data/Benchmark/"*file
+
+            C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
+
+            if P == 60 || P == 240
+                S = 6
+            else
+                S = 12
+            end
+            new_times(cpij, P, CP, S)
+            write_file(doc,C,P,CP,Q,J,60,d,ci,pj,bj,prejj,cpij)
+        end
+    end
 end
