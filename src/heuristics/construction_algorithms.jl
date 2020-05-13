@@ -1,4 +1,4 @@
-function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, crit::String, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, crit::String, tasks_by_w::Dict{Int, LTask}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     for tuple in order
         target_bay = tuple.j
         #select a task within the target_bay
@@ -68,7 +68,7 @@ function ConstructionHeuristic(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Fl
     return("Next time period")
 end
 
-function randomizedConstructionHeuristic(ind::String, crit::String, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function randomizedConstructionHeuristic(ind::String, crit::String, tasks_by_w::Dict{Int, LTask}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     #check if all cranes are busy
     if length(TIME.available_cranes) == 0
         return("All cranes are busy")
@@ -91,7 +91,7 @@ function randomizedConstructionHeuristic(ind::String, crit::String, tasks_by_w::
     return(output)
 end
 
-function deterministicConstructionHeuristic(ind::String, crit::String, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function deterministicConstructionHeuristic(ind::String, crit::String, tasks_by_w::Dict{Int, LTask}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     #check if all cranes are busy
     if length(TIME.available_cranes) == 0
         return("All cranes are busy")
@@ -116,7 +116,7 @@ end
 
 
 
-function stucked_bays(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, tasks_by_w::Dict{Int, Task}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
+function stucked_bays(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, tasks_by_w::Dict{Int, LTask}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
     for tuple in order
         target_bay = tuple.j
         #select a task within the target_bay

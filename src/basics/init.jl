@@ -1,4 +1,4 @@
-struct Constants
+@everywhere struct Constants
     C::Int
     P::Int
     J::Int
@@ -8,48 +8,48 @@ struct Constants
     delta::Int
 end
 
-mutable struct Timer
+@everywhere mutable struct Timer
     period::Int
     horizon_plan::Int
     available_cranes::Array{Int, 1}
 end
 
-struct Task
+@everywhere struct LTask
     p::Int
     b::Int
     c::Int
     t::Int
 end
 
-mutable struct LoadingSequence
-    order::Array{NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int,Int}}, 1}
+@everywhere mutable struct LoadingSequence
+    order::Array{NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int,Int}}, 1}
     tasks_left::Int
     len::Int
     filled_pos::Array{Int, 1}
     loaded_cont::Array{Int, 1}
 end
 
-mutable struct QuayCrane
+@everywhere mutable struct QuayCrane
     q::Int
     available_bays::Array{Int, 1}
     status::String
     time_left::Int
     current_bay::Number
     next_bay::Int
-    task_buffer::Array{Task, 1}
+    task_buffer::Array{LTask, 1}
 end
 
-function init_timer(CTS::Constants)
+@everywhere function init_timer(CTS::Constants)
     TIME = Timer(0, CTS.H, collect(1:CTS.Q))
     return(TIME)
 end
 
-function init_ls(CTS::Constants)
+@everywhere function init_ls(CTS::Constants)
     LS = LoadingSequence([], CTS.P, 0, [], [])
     return(LS)
 end
 
-function init_bay(q::Int, CTS::Constants)
+@everywhere function init_bay(q::Int, CTS::Constants)
     if q == 1
         return(1)
     elseif  q == CTS.Q
@@ -59,16 +59,16 @@ function init_bay(q::Int, CTS::Constants)
     end
 end
 
-function init_qc(CTS::Constants)
+@everywhere function init_qc(CTS::Constants)
     QC=Array{QuayCrane, 1}()
     for q = 1:CTS.Q
         qc_pos = subset_bay(CTS, q)
-        push!(QC, QuayCrane(q, qc_pos, "idle", 0, init_bay(q, CTS), init_bay(q, CTS), Array{Task, 1}()))
+        push!(QC, QuayCrane(q, qc_pos, "idle", 0, init_bay(q, CTS), init_bay(q, CTS), Array{LTask, 1}()))
     end
     return(QC)
 end
 
-function Base.show(io::IO, LS::LoadingSequence)
+@everywhere function Base.show(io::IO, LS::LoadingSequence)
     println(io, "LOADING SEQUENCE")
     println(io, "- tasks_left: ", LS.tasks_left)
     println(io, "- filled_pos: ", LS.filled_pos)

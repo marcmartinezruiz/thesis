@@ -1,4 +1,4 @@
-function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks_by_position::Dict{Int, Array{Task, 1}})
+function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks_by_position::Dict{Int, Array{LTask, 1}})
     H=tt*C*(J-1-(delta+1)*(Q-1))
     #H=tt*C*(J-1)
     for (key, value) in tasks_by_position
@@ -49,7 +49,7 @@ end
 
 function subset_crane_pos(CTS::Constants, p::Int, bj::Array{Int, 1})
     sub_set = Array{Int, 1}()
-    for q = 1:Q
+    for q = 1:CTS.Q
         if p in subset_pos_crane(CTS, q, bj)
             push!(sub_set, q)
         end

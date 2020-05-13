@@ -62,7 +62,7 @@ function get_qc_travel(QC_MOVES::Dict{Int, Array{NamedTuple{(:bay, :end_time, :s
     return(QC_TRAVEL)
 end
 
-function check_loaded_filled(LS::LoadingSequence, task::Task)
+function check_loaded_filled(LS::LoadingSequence, task::LTask)
     if task.p in LS.filled_pos
         #println("position already filled.")
         return(false)
@@ -75,7 +75,7 @@ function check_loaded_filled(LS::LoadingSequence, task::Task)
 end
 
 #check position precedences
-function check_prec(LS::LoadingSequence, task::Task, prec::Dict{Int, Array})
+function check_prec(LS::LoadingSequence, task::LTask, prec::Dict{Int, Array})
     if length(prec[task.p]) > 0
         for req in prec[task.p]
             if !(req in LS.filled_pos)

@@ -68,7 +68,7 @@ function get_current_state(LS::LoadingSequence, CTS::Constants)
     TIME.available_cranes = Array{Int, 1}()
 
     for q = 1:CTS.Q
-        QC[q].task_buffer = Array{Task, 1}()
+        QC[q].task_buffer = Array{LTask, 1}()
         #idle crane
         if QC_MOVES[q][end].end_time == TIME.period && length(QC_MOVES[q]) == 1
             QC[q].status = "idle"
@@ -194,8 +194,8 @@ function get_single_task(single::NamedTuple{(:qc, :bay, :start_time, :time),Tupl
     single_task = (task=Task(0,0,0,0), start_time=0, qc=0)
     left_flag = false
     right_flag = false
-    l = Array{NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}},1}()
-    r = Array{NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}},1}()
+    l = Array{NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}},1}()
+    r = Array{NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}},1}()
     for t in LS.order
         #single taks
         if t.start_time == single.start_time && t.qc == single.qc && t.task.b == single.bay && t.task.t == single.time
@@ -221,7 +221,7 @@ function get_single_task(single::NamedTuple{(:qc, :bay, :start_time, :time),Tupl
     return(single_task, left_flag, right_flag, l, r)
 end
 
-function trim_left(single::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}}, left::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}}, LS::LoadingSequence, CTS::Constants)
+function trim_left(single::NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}}, left::NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}}, LS::LoadingSequence, CTS::Constants)
     LS1 = deepcopy(LS)
     LS2 = deepcopy(LS)
     LS3 = deepcopy(LS)
@@ -265,7 +265,7 @@ function trim_left(single::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64
     return(LS1, LS2, LS3)
 end
 
-function trim_right(single::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}}, right::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}}, LS::LoadingSequence, CTS::Constants)
+function trim_right(single::NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}}, right::NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}}, LS::LoadingSequence, CTS::Constants)
     LS1 = deepcopy(LS)
     LS2 = deepcopy(LS)
     LS3 = deepcopy(LS)
@@ -308,7 +308,7 @@ function trim_right(single::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int6
     return(LS1, LS2, LS3)
 end
 
-function merge_left(single::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}}, LS1::LoadingSequence, LS2::LoadingSequence, LS3::LoadingSequence, CTS::Constants)
+function merge_left(single::NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}}, LS1::LoadingSequence, LS2::LoadingSequence, LS3::LoadingSequence, CTS::Constants)
     #merge single task
     push!(LS1.order, (task=single.task, start_time = get_qc_last_time(single.qc, LS1) + travel_time(get_qc_last_bay(single.qc, LS1), single.task.b, CTS), qc=single.qc))
     push!(LS1.filled_pos, single.task.p)
@@ -341,7 +341,7 @@ function merge_left(single::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int6
     return(LS1)
 end
 
-function merge_right(single::NamedTuple{(:task, :start_time, :qc),Tuple{Task,Int64,Int64}}, LS1::LoadingSequence, LS2::LoadingSequence, LS3::LoadingSequence, CTS::Constants)
+function merge_right(single::NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}}, LS1::LoadingSequence, LS2::LoadingSequence, LS3::LoadingSequence, CTS::Constants)
     #update and merge LS2
     if length(LS1.order) > 0
         dif = 2*travel_time(get_qc_last_bay(single.qc, LS1), single.task.b, CTS) + 2*single.task.t
@@ -452,7 +452,7 @@ function get_final_state(LS::LoadingSequence, CTS::Constants)
     TIME.available_cranes = Array{Int, 1}()
 
     for q = 1:CTS.Q
-        QC[q].task_buffer = Array{Task, 1}()
+        QC[q].task_buffer = Array{LTask, 1}()
         #idle crane
         if QC_MOVES[q][1].end_time == TIME.period
             QC[q].status = "idle"

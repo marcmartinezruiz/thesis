@@ -1,4 +1,4 @@
-function remaining_bay_time(j::Int, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
+function remaining_bay_time(j::Int, tasks_by_w::Dict{Int, LTask}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
     total = 0
     count = 0
     for p = 1:CTS.P
@@ -14,7 +14,7 @@ function remaining_bay_time(j::Int, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 
     return(total - count)
 end
 
-function bays_work_load(tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
+function bays_work_load(tasks_by_w::Dict{Int, LTask}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
     work_load = Array{NamedTuple{(:j, :remaining_time),Tuple{Int, Int}}, 1}()
     for j = 1:CTS.J
         if remaining_bay_time(j, tasks_by_w, bj, LS, CTS) > 0
@@ -35,7 +35,7 @@ function total_remaining_time(work_load::Array{NamedTuple{(:j, :remaining_time),
     return(total)
 end
 
-function order_by_maximal_bay(rand_flag::Bool, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
+function order_by_maximal_bay(rand_flag::Bool, tasks_by_w::Dict{Int, LTask}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
     #calculate remaining times
     work_load = bays_work_load(tasks_by_w, bj, LS, CTS)
     total = total_remaining_time(work_load)
@@ -89,7 +89,7 @@ function order_by_dist(rand_flag::Bool, work_load::Array{NamedTuple{(:j, :prob),
     return(order)
 end
 
-function order_by_number(rand_flag::Bool, tasks_by_w::Dict{Int, Task}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
+function order_by_number(rand_flag::Bool, tasks_by_w::Dict{Int, LTask}, bj::Array{Int, 1}, LS::LoadingSequence, CTS::Constants)
     #calculate remaining times
     work_load = bays_work_load(tasks_by_w, bj, LS, CTS)
     total = total_remaining_time(work_load)
