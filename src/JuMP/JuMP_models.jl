@@ -36,27 +36,31 @@ function OperationalShippingProblem(beta::Number, task_times::Array{Int, 2}, bj:
     @time JuMP.optimize!(model) # Old syntax: status = JuMP.solve(model)
 
     #output
-    tasks_by_w = Dict{Int, Task}()
+    tasks_by_w = Dict{Int, LTask}()
 
     for t in findall( x -> x == 1, JuMP.value.(w))
-       tasks_by_w[t[1]]=Task(t[1],bj[t[1]],t[2],task_times[t[1],t[2]])
+       tasks_by_w[t[1]]=LTask(t[1],bj[t[1]],t[2],task_times[t[1],t[2]])
     end
     return(tasks_by_w)
 end
 
 
-function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, task_times::Array{Int, 2}, bj::Array{Int,1}, CTS::Constants)
-    T=P+1
-    PP=[p for p in 1:P]
+function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, prec::Dict{Int, Array}, task_times::Array{Int, 2}, bj::Array{Int,1}, CTS::Constants)
+    T=CTS.P+1
+    PP=[p for p in 1:CTS.P]
     PPP=[p for p in 0:T]
-    PP0=[p for p in 0:P]
+    PP0=[p for p in 0:CTS.P]
     PPT=[p for p in 1:T]
-    QQ=[q for q in 1:Q]
-    CC=[c for c in 1:C]
+    QQ=[q for q in 1:CTS.Q]
+    CC=[c for c in 1:CTS.C]
 
+    #create bj_init
+    bj_init = Array{Int,1}()
+    for q in QQ
+        push!(bj_init, init_bay(q, CTS))
+    end
     #create bj_dict
     bj_dict = Dict{Int, Array{Int,1}}()
-    bj_init = [1,5]
     for p in PPP
         l = Array{Int,1}()
         for q in QQ
@@ -75,48 +79,48 @@ function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, task_times::
     model = JuMP.direct_model(Gurobi.Optimizer(OutputFlag=0, Threads=4))
 
     #if positions p, s are performed consecutively by crane q
-    @variable(model, x[p=0:T, s=0:T, q=1:Q], Bin)
+    @variable(model, x[p=0:T, s=0:T, q=1:CTS.Q], Bin)
     #if positions p is filled with container i
-    @variable(model, w[p=0:T, i=1:C], Bin)
+    @variable(model, w[p=0:T, i=1:CTS.C], Bin)
     #if position s starts after the completion time of task p
-    @variable(model, z[p=1:P, s=1:P], Bin)
+    @variable(model, z[p=1:CTS.P, s=1:CTS.P], Bin)
 
     #completion time of task p
     @variable(model, t_load[p=0:T], Int, lower_bound=0, upper_bound=CTS.H)
     #completion required time to perform task p
     @variable(model, t_task[p=0:T], lower_bound=0, upper_bound=CTS.H)
     #completion time of crane q
-    @variable(model, t_crane[q=1:Q], lower_bound=0, upper_bound=CTS.H)
+    @variable(model, t_crane[q=1:CTS.Q], lower_bound=0, upper_bound=CTS.H)
 
     #objective function
     @objective(model, Min, alpha1*t_load[T] + alpha2*sum(t_crane[q] for q in QQ))
 
     #constraints for variables initialization and boundaries
-    @constraint(model, [p=0:T, q=1:Q], x[p,p,q] == 0)
-    @constraint(model, [p=1:P], z[p,p] == 0)
+    @constraint(model, [p=0:T, q=1:CTS.Q], x[p,p,q] == 0)
+    @constraint(model, [p=1:CTS.P], z[p,p] == 0)
 
     @constraint(model, t_load[0] == 0)
 
     @constraint(model, t_task[0] == 0)
     @constraint(model, t_task[T] == 0)
 
-    @constraint(model, [i=1:C], w[0,i] == 0)
-    @constraint(model, [i=1:C], w[T,i] == 0)
+    @constraint(model, [i=1:CTS.C], w[0,i] == 0)
+    @constraint(model, [i=1:CTS.C], w[T,i] == 0)
 
     #constraints regarding tasks selection (position-container combination)
-    @constraint(model, [i=1:C], sum(w[p,i] for p in subset_pos(PP, task_times, i)) == 1)
-    @constraint(model, [p=1:P], sum(w[p,i] for i in subset_pos(CC, task_times, p)) == 1)
+    @constraint(model, [i=1:CTS.C], sum(w[p,i] for p in subset_pos(PP, task_times, i)) == 1)
+    @constraint(model, [p=1:CTS.P], sum(w[p,i] for i in subset_pos(CC, task_times, p)) == 1)
 
-    @constraint(model, [p=1:P], t_task[p] == sum(task_times[p,i]*w[p,i] for i in subset_pos(CC, task_times, p)))
+    @constraint(model, [p=1:CTS.P], t_task[p] == sum(task_times[p,i]*w[p,i] for i in subset_pos(CC, task_times, p)))
 
     #relate crane times and makespan
-    @constraint(model, [q=1:Q], t_crane[q] <= t_load[T])
+    @constraint(model, [q=1:CTS.Q], t_crane[q] <= t_load[T])
 
     #constraints regarding tasks assignment
-    @constraint(model, [q=1:Q], sum(x[0,s,q] for s in PPT) == 1)
-    @constraint(model, [q=1:Q], sum(x[p,T,q] for p in PP0) == 1)
+    @constraint(model, [q=1:CTS.Q], sum(x[0,s,q] for s in PPT) == 1)
+    @constraint(model, [q=1:CTS.Q], sum(x[p,T,q] for p in PP0) == 1)
 
-    @constraint(model, [p=1:P], sum(sum(x[p,s,q] for s in PPT) for q in QQ) == 1)
+    @constraint(model, [p=1:CTS.P], sum(sum(x[p,s,q] for s in PPT) for q in QQ) == 1)
     for p in PP
         for q in QQ
             @constraint(model, sum(x[s,p,q] for s in PP0) - sum(x[p,s,q] for s in PPT) == 0)
@@ -181,7 +185,7 @@ function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, task_times::
     makespan = JuMP.value.(t_load)[T]
 
     sol_x = Dict{Int, Array}()
-    for q=1:Q
+    for q=1:CTS.Q
         for p=0:T
             for s=0:T
                 if JuMP.value.(x)[p,s,q] == 1
@@ -196,8 +200,8 @@ function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, task_times::
     end
 
     sol_w = Dict{Int, Int}()
-    for p=1:P
-        for i=1:C
+    for p=1:CTS.P
+        for i=1:CTS.C
             if JuMP.value.(w)[p,i] == 1
                 sol_w[p] = i
             end

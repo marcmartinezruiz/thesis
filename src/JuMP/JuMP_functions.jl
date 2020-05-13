@@ -18,7 +18,7 @@ function update_math_ls(LS::LoadingSequence, t::NamedTuple{(:start_time, :pos, :
         push!(LS.filled_pos, t.pos)
         push!(LS.loaded_cont, sol_w[t.pos])
     end
-    push!(LS.order, (task=Task(t.pos, bj_dict[t.pos][t.qc], sol_w[t.pos], JuMP.value.(t_task)[t.pos]), start_time=t.start_time, qc=t.qc))
+    push!(LS.order, (task=LTask(t.pos, bj_dict[t.pos][t.qc], sol_w[t.pos], JuMP.value.(t_task)[t.pos]), start_time=t.start_time, qc=t.qc))
 end
 
 function get_math_ls(sol_x::Dict{Int, Array}, sol_w::Dict{Int, Int}, CTS::Constants)
