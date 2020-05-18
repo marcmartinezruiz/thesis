@@ -45,7 +45,7 @@ function OperationalShippingProblem(beta::Number, task_times::Array{Int, 2}, bj:
 end
 
 
-function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, prec::Dict{Int, Array}, task_times::Array{Int, 2}, bj::Array{Int,1}, CTS::Constants)
+function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, prec::Dict{Int, Array}, task_times::Array{Int, 2}, bj::Array{Int,1}, LB::Number, CTS::Constants)
     T=CTS.P+1
     PP=[p for p in 1:CTS.P]
     PPP=[p for p in 0:T]
@@ -100,6 +100,7 @@ function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, prec::Dict{I
     @constraint(model, [p=1:CTS.P], z[p,p] == 0)
 
     @constraint(model, t_load[0] == 0)
+    @constraint(model, t_load[T] >= LB)
 
     @constraint(model, t_task[0] == 0)
     @constraint(model, t_task[T] == 0)

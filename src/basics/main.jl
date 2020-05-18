@@ -1,5 +1,5 @@
 using Distributed
-@everywhere using DelimitedFiles, JuMP, Gurobi, Statistics, StatsBase, DataFrames
+@everywhere using DelimitedFiles, JuMP, Gurobi, Statistics, StatsBase, DataFrames, Gadfly
 include("./init.jl")
 include("../input_data/read_data.jl")
 @everywhere include("../input_data/data_manipulation.jl")
@@ -27,8 +27,8 @@ for file in reverse(readdir("../../data/Benchmark/"))
 #for file in reverse(readdir("./data/pending/"))
     println("-------------")
     println(file)
-    #if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
-    if file == "500C_100Type_LessDense_4QC.txt"
+    if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
+    # if file == "500C_100Type_LessDense_4QC.txt"
         doc = "../../data/Benchmark/"*file
         C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
 
@@ -65,7 +65,7 @@ for file in reverse(readdir("../../data/Benchmark/"))
 
         end
 
-        H = horizon_plan(C,P,J,Q,tt,d,tasks_by_position)
+        H = horizon_plan(C,P,J,Q,tt,d,bj,tasks_by_position)
         global CTS = Constants(C,P,J,Q,H,tt,d)
         global it_results, best_makespan, best_LS, exec_time
         start = time()
@@ -74,6 +74,7 @@ for file in reverse(readdir("../../data/Benchmark/"))
         best_makespan, best_LS = GRASP_multi_thread(0, prec, task_times, bj, CTS)
         exec_time = time() - start
         #write_results(doc, it_results)
+        write_time_results(doc, exec_time)
         # best_makespan, best_LS = GRASP_algorithm(0, prec, task_times, bj, CTS)
         println(best_makespan)
         println(exec_time)

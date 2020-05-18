@@ -57,8 +57,16 @@ for file in reverse(readdir("../../data/Benchmark/"))
         H = horizon_plan(C,P,J,Q,tt,d,tasks_by_position)
         global CTS = Constants(C,P,J,Q,H,tt,d)
         global makespan, sol_x, sol_w
+        #get minimum LoadingTime
+        tasks_by_w = OperationalShippingProblem(0, prec, task_times, bj, CTS)
+        LT_min=0
+        for (key,value) in tasks_by_w
+            LT_min += value
+        end
+        LB = (2*LT_min + CTS.tt*(maximum(bj)-inimum(bj)))/CTS.Q
+        print("LT_min="), print(LT_min), print(",  LB="), println(LB)
         start = time()
-        makespan, sol_x, sol_w = FlexibleShipLoadingProblem(1, 0, prec, task_times, bj, CTS)
+        makespan, sol_x, sol_w = FlexibleShipLoadingProblem(1, 0, prec, task_times, bj, LB, CTS)
         exec_time = time() - start
         println(makespan)
         println(exec_time)

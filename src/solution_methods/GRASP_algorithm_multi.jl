@@ -88,5 +88,12 @@ function GRASP_multi_thread(beta::Number, prec::Dict{Int, Array}, task_times::Ar
     #     return(r[1],r[2])
     # end
 
+    # 2 Threads
+    # if s1[1]<=r[1]
+    #     return(s1[1],s1[2])
+    # else
+    #     return(r[1],r[2])
+    # end
+
     return(best_makespan, best_LS)
 end

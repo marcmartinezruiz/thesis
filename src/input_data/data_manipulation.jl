@@ -1,6 +1,6 @@
-function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks_by_position::Dict{Int, Array{LTask, 1}})
-    H=tt*C*(J-1-(delta+1)*(Q-1))
-    #H=tt*C*(J-1)
+function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, bj::Array{Int,1}, tasks_by_position::Dict{Int, Array{LTask, 1}})
+    med = median(bj)
+    H=0
     for (key, value) in tasks_by_position
         h=0
         for t in value
@@ -8,8 +8,17 @@ function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, tasks
                 h=2*t.t
             end
         end
-        H=H+h
+        if bj[key] < med
+            H-=2*bj[key]
+        elseif bj[key] > med
+            H+=2*bj[key]
+        end
+        H+=h
     end
+    if med in bj
+        H-=med
+    end
+    H+=minimum(bj)
     return(H)
 end
 

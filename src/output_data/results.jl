@@ -1,6 +1,5 @@
 function write_results(doc::String, it_results::Array{Tuple{Number, Number, String, String}, 1})
-
-    output = "./results"*doc[17:end-4]*"_results.txt"
+    output = "../../results"*doc[21:end-4]*"_results.txt"
     open(output, "w") do o
 
         println(o, string("makespan time indicator criteria"))
@@ -9,5 +8,11 @@ function write_results(doc::String, it_results::Array{Tuple{Number, Number, Stri
         end
 
     end
+end
 
+function write_time_results(doc::String, exec_time::Number)
+    output = "../../results"*doc[21:end-4]*"_time_results.txt"
+    open(output, "w") do o
+        println(o, string(exec_time))
+    end
 end
