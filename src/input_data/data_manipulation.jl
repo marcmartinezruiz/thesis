@@ -22,6 +22,76 @@ function horizon_plan(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, bj::A
     return(H)
 end
 
+function horizon_plan_new(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, bj::Array{Int,1}, tasks_by_position::Dict{Int, Array{LTask, 1}})
+    UB=0
+    for it = 1:Q
+        bj_dict = Dict{Int, Array{Int, 1}}()
+        order=Array{Tuple{Int,Int},1}()
+        if it == 1
+            for q = 1:Q
+                if length(order) == 0
+                    push!(order, ((q-1)*(delta+1)+1, J-(Q-q)*(delta+1)))
+                else
+                    push!(order, (order[end][2], J-(Q-q)*(delta+1)))
+                end
+            end
+        elseif it == Q
+            for q = Q:-1:1
+                if length(order) == 0
+                    push!(order, ((q-1)*(delta+1)+1, J-(Q-q)*(delta+1)))
+                else
+                    pushfirst!(order, ((q-1)*(delta+1)+1, order[end][1]))
+                end
+            end
+        else
+            continue
+        end
+
+        for q = 1:Q
+            bj_dict[q] = bj[order[q][1]:order[q][2]]
+        end
+
+        LT=0
+        for (key, value) in tasks_by_position
+            h=0
+            for t in value
+                if t.t > h
+                    h=2*t.t
+                end
+            end
+            LT+=h
+        end
+
+        H=0
+        for (key, value) in bj_dict
+            TT=0
+            med = median(value)
+            for p = 1:P
+                if p in value && p < med
+                    TT-=2*p
+                elseif p in value && p >med
+                    TT+=2*p
+                end
+            end
+            if med in value
+                TT-=med
+            end
+            TT+=minimum(value)
+            if TT > H
+                H = TT
+            end
+        end
+
+        H+=LT
+        if H > UB
+            UB = H
+        end
+    end
+    return(UB)
+end
+
+
+
 function subset_pos(dummy::Array, set::Array{Int, 2}, pos_cont::Int)
     sub_set = findall(x->x!=0, set[pos_cont,:])
     return(sub_set)

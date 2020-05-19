@@ -27,8 +27,8 @@ for file in reverse(readdir("../../data/Benchmark/"))
 #for file in reverse(readdir("./data/pending/"))
     println("-------------")
     println(file)
-    if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
-    # if file == "500C_100Type_LessDense_4QC.txt"
+    # if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
+    if file[1:3] == "60C"
         doc = "../../data/Benchmark/"*file
         C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
 
