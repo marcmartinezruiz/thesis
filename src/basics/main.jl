@@ -10,7 +10,7 @@ include("../input_data/read_data.jl")
 @everywhere include("../heuristics/local_search.jl")
 include("../JuMP/JuMP_functions.jl")
 include("../JuMP/JuMP_models.jl")
-@everywhere include("../solution_methods/GRASP_algorithm_multi.jl")
+@everywhere include("../solution_methods/GRASP_reactive_multi.jl")
 # include("../solution_methods/GRASP_algorithm.jl")
 include("../output_data/results.jl")
 
@@ -22,13 +22,14 @@ include("../output_data/results.jl")
     #doc = "./data/Benchmark/1000C_100Type_UniformDense_4QC.txt"
     #JUPYTER
     #doc = "../data/Benchmark/240C_20Type_LessDense_2QC.txt"
-
+results = Dict{String, Array{Tuple{Number, Number}, 1}}()
+for i = 1:10
 for file in reverse(readdir("../../data/Benchmark/"))
 #for file in reverse(readdir("./data/pending/"))
     println("-------------")
     println(file)
     # if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
-    if file[1:3] == "60C"
+    if file[1:3] == "500"
         doc = "../../data/Benchmark/"*file
         C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
 
@@ -79,9 +80,14 @@ for file in reverse(readdir("../../data/Benchmark/"))
         println(best_makespan)
         println(exec_time)
         #println(best_LS)
+        if haskey(results, file)
+            push!(results[file], (best_makespan, exec_time))
+        else
+            results[file] = [(best_makespan, exec_time)]
+        end
     end
 end
-
+end
 
 #plot_solution(best_LS, best_makespan, CTS)
 

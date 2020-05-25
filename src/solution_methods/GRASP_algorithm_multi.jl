@@ -4,8 +4,12 @@ function GRASP_single_thread(tasks_by_w::Dict{Int, LTask}, prec::Dict{Int, Array
     sort_criteria = ["number", "dist"]
     best_makespan = CTS.H
     best_LS = init_ls(CTS)
+    max_it = 0
+    no_imp_it = 0
 
-    for iter = 1:125
+    #for iter = 1:125
+    while max_it < 1250 || no_imp_it < 125
+        max_it += 1
         makespan = CTS.H
         LS = init_ls(CTS)
         QC = init_qc(CTS)
@@ -24,15 +28,16 @@ function GRASP_single_thread(tasks_by_w::Dict{Int, LTask}, prec::Dict{Int, Array
 
         if check_solution(prec, LS, CTS) == true
             makespan = total_makespan(LS, CTS)
-            #push!(it_results, (makespan, it_time, ind, crit))
             if makespan < best_makespan
                 best_makespan = makespan
                 best_LS = deepcopy(LS)
+                no_imp_it = 0
+            else
+                no_imp_it += 1
             end
         end
     end
 
-    #return(it_results, best_makespan, best_LS)
     return((best_makespan, best_LS))
 end
 

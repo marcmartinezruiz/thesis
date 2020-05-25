@@ -24,42 +24,33 @@ end
 
 function horizon_plan_new(C::Int, P::Int, J::Int, Q::Int, tt::Int, delta::Int, bj::Array{Int,1}, tasks_by_position::Dict{Int, Array{LTask, 1}})
     UB=0
+    #calculate max loading time
+    LT=0
+    for (key, value) in tasks_by_position
+        h=0
+        for t in value
+            if t.t > h
+                h=2*t.t
+            end
+        end
+        LT+=h
+    end
+    #calculate max travel time
     for it = 1:Q
         bj_dict = Dict{Int, Array{Int, 1}}()
         order=Array{Tuple{Int,Int},1}()
-        if it == 1
-            for q = 1:Q
-                if length(order) == 0
-                    push!(order, ((q-1)*(delta+1)+1, J-(Q-q)*(delta+1)))
-                else
-                    push!(order, (order[end][2], J-(Q-q)*(delta+1)))
-                end
+        for q = 1:Q
+            if q == it
+                push!(order, ((q-1)*(delta+1)+1, J-(Q-q)*(delta+1)))
+            elseif q < it
+                push!(order, ((q-1)*(delta+1)+1, q*(delta+1)))
+            elseif q > it
+                push!(order, (J-(Q-q)*(delta+1)-1, J-(Q-q)*(delta+1)))
             end
-        elseif it == Q
-            for q = Q:-1:1
-                if length(order) == 0
-                    push!(order, ((q-1)*(delta+1)+1, J-(Q-q)*(delta+1)))
-                else
-                    pushfirst!(order, ((q-1)*(delta+1)+1, order[end][1]))
-                end
-            end
-        else
-            continue
         end
-
+        println(order)
         for q = 1:Q
             bj_dict[q] = bj[order[q][1]:order[q][2]]
-        end
-
-        LT=0
-        for (key, value) in tasks_by_position
-            h=0
-            for t in value
-                if t.t > h
-                    h=2*t.t
-                end
-            end
-            LT+=h
         end
 
         H=0
