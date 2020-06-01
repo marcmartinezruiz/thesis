@@ -56,11 +56,15 @@ function GRASP_statistical_filter(CTS::Constants)
                     elseif makespan < local_makespan
                         local_makespan = makespan
                     end
+                else
+                    println("STOP")
+                    return(total_makespan(new_LS, CTS), new_LS)
                 end
                 push!(sol_local, (iter, local_makespan))
             end
 
         else
+            println("ERROR")
             continue
         end
     end

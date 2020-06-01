@@ -281,7 +281,7 @@ end
 function check_solution(prec::Dict{Int, Array}, LS::LoadingSequence, CTS::Constants)
     #check positions and containers
     if check_tasks(LS, CTS) == false
-        println("missing tasks")
+        # println("missing tasks")
         return(false)
     end
 
@@ -309,11 +309,11 @@ function check_solution(prec::Dict{Int, Array}, LS::LoadingSequence, CTS::Consta
                 for i = 1: length(value)-1
                     #check loading + travel time
                     if value[i].end_time + travel_time(value[i].bay, value[i+1].bay, CTS) > value[i+1].start_time
-                        println("wrong task/travel time")
-                        println("QUAY CRANE: "*string(key))
-                        println(value[i])
-                        println(value[i+1])
-                        println("-------------- ")
+                        # println("wrong task/travel time")
+                        # println("QUAY CRANE: "*string(key))
+                        # println(value[i])
+                        # println(value[i+1])
+                        # println("-------------- ")
                         return(false)
                     end
                     #check that cranes respect bays
@@ -357,7 +357,7 @@ function check_solution(prec::Dict{Int, Array}, LS::LoadingSequence, CTS::Consta
         for b = 1:length(current_cranes)-1
             if abs(current_cranes[b][2] - current_cranes[b+1][2]) <= CTS.delta
                 # println(QC)
-                println("wrong clearance")
+                # println("wrong clearance")
                 return(false)
             end
         end

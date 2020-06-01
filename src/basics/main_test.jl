@@ -10,8 +10,8 @@ include("../input_data/read_data.jl")
 @everywhere include("../heuristics/local_search.jl")
 include("../JuMP/JuMP_functions.jl")
 include("../JuMP/JuMP_models.jl")
-@everywhere include("../solution_methods/GRASP_filter_multi.jl")
-# @everywhere include("../solution_methods/GRASP_local_search_multi.jl")
+include("../solution_methods/GRASP_local_search_1.jl")
+@everywhere include("../solution_methods/GRASP_local_search_multi.jl")
 # @everywhere include("../solution_methods/GRASP_reactive_multi.jl")
 # @everywhere include("../solution_methods/GRASP_algorithm_multi.jl")
 # include("../solution_methods/GRASP_algorithm.jl")
@@ -26,18 +26,18 @@ include("../output_data/results.jl")
     #JUPYTER
     #doc = "../data/Benchmark/240C_20Type_LessDense_2QC.txt"
 results = Dict{String, Array{Tuple{Number, Number}, 1}}()
-for i = 1:10
+for i = 1:1
 for file in reverse(readdir("../../data/Benchmark/"))
 #for file in reverse(readdir("./data/pending/"))
     println("-------------")
     println(file)
     # if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
-    if file[1:3] == "500"
+    if file == "60C_10Type_LessDense_2QC.txt"
         doc = "../../data/Benchmark/"*file
         C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
 
         possible_tasks = Array{LTask, 1}()
-        tasks_by_position = Dict{Int, Array{LTask, 1}}()
+        global tasks_by_position = Dict{Int, Array{LTask, 1}}()
         prec = Dict{Int, Array}()
         task_times = zeros(Int, P, C)
 
@@ -75,10 +75,10 @@ for file in reverse(readdir("../../data/Benchmark/"))
         start = time()
         # best_makespan, best_LS = GRASP_algorithm(0, prec, task_times, bj, CTS)
         # it_results, best_makespan, best_LS = GRASP_algorithm(0, prec, task_times, bj, CTS)
-        best_makespan, best_LS = GRASP_multi_thread(0, prec, task_times, bj, CTS)
+        best_makespan, best_LS = GRASP_local_search(0, prec, task_times, bj, CTS)
         exec_time = time() - start
         #write_results(doc, it_results)
-        write_time_results(doc, exec_time)
+        # write_time_results(doc, exec_time)
         # best_makespan, best_LS = GRASP_algorithm(0, prec, task_times, bj, CTS)
         println(best_makespan)
         println(exec_time)

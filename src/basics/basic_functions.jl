@@ -86,6 +86,7 @@ function get_qc_last_bay(q::Int, LS::LoadingSequence)
             return(t.task.b)
         end
     end
+    return(0)
 end
 function get_qc_first_bay(q::Int, LS::LoadingSequence)
     for t in LS.order

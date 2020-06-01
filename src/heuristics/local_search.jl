@@ -85,7 +85,7 @@ function get_current_state(LS::LoadingSequence, CTS::Constants)
         #moving or waiting to move/load crane
         elseif QC_MOVES[q][end-1].end_time <= TIME.period && TIME.period < QC_MOVES[q][end].start_time
             QC[q].next_bay = QC_MOVES[q][end].bay
-            push!(QC[q].task_buffer, Task(0, QC_MOVES[q][end].bay, 0, QC_MOVES[q][end].time))
+            push!(QC[q].task_buffer, LTask(0, QC_MOVES[q][end].bay, 0, QC_MOVES[q][end].time))
             if QC_MOVES[q][end-1].bay == QC_MOVES[q][end].bay
                 QC[q].status = "waiting to load"
                 QC[q].time_left = QC_MOVES[q][end].start_time - TIME.period
@@ -93,7 +93,7 @@ function get_current_state(LS::LoadingSequence, CTS::Constants)
             elseif QC_TRAVEL[q][1].start_time <= TIME.period
                 QC[q].status = "moving"
                 QC[q].time_left = QC_TRAVEL[q][1].end_time - TIME.period
-                QC[q].current_bay = QC_MOVES[q][end].bay - QC[q].time_left*CTS.tt
+                QC[q].current_bay = QC_MOVES[q][end].bay - QC[q].time_left/CTS.tt
             else
                 QC[q].status = "waiting to move"
                 QC[q].time_left = QC_TRAVEL[q][1].start_time - TIME.period
@@ -106,7 +106,7 @@ function get_current_state(LS::LoadingSequence, CTS::Constants)
                 QC[q].time_left = QC_MOVES[q][end-1].end_time - TIME.period
                 QC[q].current_bay = QC_MOVES[q][end-1].bay
                 QC[q].next_bay = QC_MOVES[q][end].bay
-                push!(QC[q].task_buffer, Task(0, QC_MOVES[q][end].bay, 0, QC_MOVES[q][end].time))
+                push!(QC[q].task_buffer, LTask(0, QC_MOVES[q][end].bay, 0, QC_MOVES[q][end].time))
             end
         else
             for i = 1:length(QC_MOVES[q])-1
@@ -114,7 +114,7 @@ function get_current_state(LS::LoadingSequence, CTS::Constants)
                 if QC_MOVES[q][i].end_time <= TIME.period && TIME.period < QC_MOVES[q][i+1].start_time
                     QC[q].next_bay = QC_MOVES[q][i+1].bay
                     for i = 1:length(QC_MOVES[q])-1
-                        push!(QC[q].task_buffer, Task(0, QC_MOVES[q][i+1].bay, 0, QC_MOVES[q][i+1].time))
+                        push!(QC[q].task_buffer, LTask(0, QC_MOVES[q][i+1].bay, 0, QC_MOVES[q][i+1].time))
                     end
                     if QC_MOVES[q][i].bay == QC_MOVES[q][i+1].bay
                         QC[q].status = "waiting to load"
@@ -123,7 +123,7 @@ function get_current_state(LS::LoadingSequence, CTS::Constants)
                     elseif QC_TRAVEL[q][1].start_time <= TIME.period
                         QC[q].status = "moving"
                         QC[q].time_left = QC_TRAVEL[q][1].end_time - TIME.period
-                        QC[q].current_bay = QC_MOVES[q][i+1].bay - QC[q].time_left*CTS.tt
+                        QC[q].current_bay = QC_MOVES[q][i+1].bay - QC[q].time_left/CTS.tt
                     else
                         QC[q].status = "waiting to move"
                         QC[q].time_left = QC_TRAVEL[q][1].start_time - TIME.period
@@ -136,7 +136,7 @@ function get_current_state(LS::LoadingSequence, CTS::Constants)
                     QC[q].current_bay = QC_MOVES[q][i].bay
                     QC[q].next_bay = QC_MOVES[q][i].bay
                     for i = 1:length(QC_MOVES[q])-1
-                        push!(QC[q].task_buffer, Task(0, QC_MOVES[q][i+1].bay, 0, QC_MOVES[q][i+1].time))
+                        push!(QC[q].task_buffer, LTask(0, QC_MOVES[q][i+1].bay, 0, QC_MOVES[q][i+1].time))
                     end
                 end
             end
@@ -191,7 +191,7 @@ function get_single_moves(QC_MOVES::Dict{Int, Array{NamedTuple{(:bay, :end_time,
 end
 
 function get_single_task(single::NamedTuple{(:qc, :bay, :start_time, :time),Tuple{Int64,Int64,Int64,Int64}}, LS::LoadingSequence, CTS::Constants)
-    single_task = (task=Task(0,0,0,0), start_time=0, qc=0)
+    single_task = (task=LTask(0,0,0,0), start_time=0, qc=0)
     left_flag = false
     right_flag = false
     l = Array{NamedTuple{(:task, :start_time, :qc),Tuple{LTask,Int64,Int64}},1}()
@@ -379,11 +379,11 @@ function merge_right(single::NamedTuple{(:task, :start_time, :qc),Tuple{LTask,In
     return(LS1)
 end
 
-function remove_single_moves(makespan::Int, LS::LoadingSequence, CTS::Constants)
+function remove_single_moves(prec::Dict{Int, Array}, makespan::Int, LS::LoadingSequence, CTS::Constants)
     QC_MOVES = get_qc_moves(LS, CTS)
     single_moves = get_single_moves(QC_MOVES, CTS)
     if single_moves == false
-        return(false, LS, makespan)
+        return((makespan, LS))
     else
         for single in single_moves
             if single.qc == LS.order[end].qc
@@ -392,9 +392,9 @@ function remove_single_moves(makespan::Int, LS::LoadingSequence, CTS::Constants)
                     for l_task in l
                         LS1, LS2, LS3 = trim_left(single_task, l_task, LS, CTS)
                         new_LS = merge_left(single_task, LS1, LS2, LS3, CTS)
-                        if check_solution(new_LS, CTS) == true
+                        if check_solution(prec, new_LS, CTS) == true
                             if total_makespan(new_LS, CTS) < makespan
-                                return(true, new_LS, total_makespan(new_LS, CTS))
+                                return((total_makespan(new_LS, CTS), new_LS))
                             end
                         end
                     end
@@ -403,16 +403,16 @@ function remove_single_moves(makespan::Int, LS::LoadingSequence, CTS::Constants)
                     for r_task in r
                         LS1, LS2, LS3 = trim_right(single_task, r_task, LS, CTS)
                         new_LS = merge_right(single_task, LS1, LS2, LS3, CTS)
-                        if check_solution(new_LS, CTS) == true
+                        if check_solution(prec, new_LS, CTS) == true
                             if total_makespan(new_LS, CTS) < makespan
-                                return(true, new_LS, total_makespan(new_LS, CTS))
+                                return((total_makespan(new_LS, CTS), new_LS))
                             end
                         end
                     end
                 end
             end
         end
-        return(false, LS, makespan)
+        return((makespan, LS))
     end
 end
 

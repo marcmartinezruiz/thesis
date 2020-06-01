@@ -102,12 +102,12 @@ function deterministicConstructionHeuristic(ind::String, crit::String, tasks_by_
     end
 
     #order according to indicator
-    if ind == "maximal"
-        order = order_by_maximal_bay(false, tasks_by_w, bj, LS, CTS)
-    elseif ind == "minimal"
-        order = reverse(order_by_maximal_bay(false, tasks_by_w, bj, LS, CTS))
-    else
-        order = order_by_dist(false, tasks_by_w, bj, LS, QC, CTS)
+    work_load = order_by_maximal_bay(false, tasks_by_w, bj, LS, CTS)
+    if ind == "minimal"
+        order = reverse!(work_load)
+    elseif ind == "number"
+        work_load_dist = order_by_dist(false, work_load, QC, CTS)
+        order = order_by_number(false, work_load_dist, QC, CTS)
     end
 
     output = ConstructionHeuristic(order, crit, tasks_by_w, prec, bj, LS, TIME, QC, CTS)
