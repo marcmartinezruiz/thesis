@@ -117,28 +117,32 @@ end
 
 
 function stucked_bays(order::Array{NamedTuple{(:j, :prob),Tuple{Int, Float64}}, 1}, tasks_by_w::Dict{Int, LTask}, prec::Dict{Int, Array}, bj::Array{Int, 1}, LS::LoadingSequence, TIME::Timer, QC::Array{QuayCrane, 1}, CTS::Constants)
-    for tuple in order
-        target_bay = tuple.j
-        #select a task within the target_bay
-        for p in bay_to_pos(target_bay, bj)
-            if check_prec(LS, tasks_by_w[p], prec) == true
-                if check_loaded_filled(LS, tasks_by_w[p]) == true
-                    target_task = tasks_by_w[p]
-                    #check if any crane that can perform for this task
-                    if target_bay in QC[1].available_bays && 1 in TIME.available_cranes
-                        add_move(3, target_bay + CTS.delta + 3, LS, TIME, QC, CTS)
-                        add_move(4, target_bay + CTS.delta + 5, LS, TIME, QC, CTS)
-                        add_task_move(target_task, 1, 2, target_bay + CTS.delta + 1, "idle", LS, TIME, QC, CTS)
-                        return("New task successfuly added. \n---------------")
-                    elseif target_bay in QC[CTS.Q].available_bays && CTS.Q in TIME.available_cranes
-                        add_move(2, target_bay - CTS.delta - 3, LS, TIME, QC, CTS)
-                        add_move(1, target_bay - CTS.delta - 5, LS, TIME, QC, CTS)
-                        add_task_move(target_task, 4, 3, target_bay - CTS.delta - 1, "idle", LS, TIME, QC, CTS)
-                        return("New task successfuly added. \n---------------")
+    if LS.tasks_left != 0
+        for tuple in order
+            target_bay = tuple.j
+            #select a task within the target_bay
+            for p in bay_to_pos(target_bay, bj)
+                if check_prec(LS, tasks_by_w[p], prec) == true
+                    if check_loaded_filled(LS, tasks_by_w[p]) == true
+                        target_task = tasks_by_w[p]
+                        #check if any crane that can perform for this task
+                        if target_bay in QC[1].available_bays && 1 in TIME.available_cranes
+                            add_move(3, target_bay + CTS.delta + 3, LS, TIME, QC, CTS)
+                            add_move(4, target_bay + CTS.delta + 5, LS, TIME, QC, CTS)
+                            add_task_move(target_task, 1, 2, target_bay + CTS.delta + 1, "idle", LS, TIME, QC, CTS)
+                            return("New task successfuly added. \n---------------")
+                        elseif target_bay in QC[CTS.Q].available_bays && CTS.Q in TIME.available_cranes
+                            add_move(2, target_bay - CTS.delta - 3, LS, TIME, QC, CTS)
+                            add_move(1, target_bay - CTS.delta - 5, LS, TIME, QC, CTS)
+                            add_task_move(target_task, 4, 3, target_bay - CTS.delta - 1, "idle", LS, TIME, QC, CTS)
+                            return("New task successfuly added. \n---------------")
+                        end
                     end
                 end
             end
         end
+        return("Next time period")
+    else
+        return("LS is completed")
     end
-    return("Next time period")
 end

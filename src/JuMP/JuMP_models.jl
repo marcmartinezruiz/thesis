@@ -13,7 +13,7 @@ function OperationalShippingProblem(beta::Number, task_times::Array{Int, 2}, bj:
         end
     end
 
-    model = JuMP.direct_model(Gurobi.Optimizer(OutputFlag=0, Threads=4))
+    model = JuMP.direct_model(Gurobi.Optimizer(OutputFlag=0, Threads=8))
 
     #if positions p is filled with container i
     @variable(model, w[p=1:CTS.P, i=1:CTS.C], Bin)
@@ -76,7 +76,7 @@ function FlexibleShipLoadingProblem(alpha1::Number, alpha2::Number, prec::Dict{I
     end
 
     #using JuMP, Gurobi
-    model = JuMP.direct_model(Gurobi.Optimizer(OutputFlag=0, Threads=4))
+    model = JuMP.direct_model(Gurobi.Optimizer(OutputFlag=0, Threads=8))
 
     #if positions p, s are performed consecutively by crane q
     @variable(model, x[p=0:T, s=0:T, q=1:CTS.Q], Bin)

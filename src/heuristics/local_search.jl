@@ -383,7 +383,7 @@ function remove_single_moves(prec::Dict{Int, Array}, makespan::Int, LS::LoadingS
     QC_MOVES = get_qc_moves(LS, CTS)
     single_moves = get_single_moves(QC_MOVES, CTS)
     if single_moves == false
-        return((makespan, LS))
+        return(LS)
     else
         for single in single_moves
             if single.qc == LS.order[end].qc
@@ -394,7 +394,7 @@ function remove_single_moves(prec::Dict{Int, Array}, makespan::Int, LS::LoadingS
                         new_LS = merge_left(single_task, LS1, LS2, LS3, CTS)
                         if check_solution(prec, new_LS, CTS) == true
                             if total_makespan(new_LS, CTS) < makespan
-                                return((total_makespan(new_LS, CTS), new_LS))
+                                return(new_LS)
                             end
                         end
                     end
@@ -405,19 +405,23 @@ function remove_single_moves(prec::Dict{Int, Array}, makespan::Int, LS::LoadingS
                         new_LS = merge_right(single_task, LS1, LS2, LS3, CTS)
                         if check_solution(prec, new_LS, CTS) == true
                             if total_makespan(new_LS, CTS) < makespan
-                                return((total_makespan(new_LS, CTS), new_LS))
+                                return(new_LS)
                             end
                         end
                     end
                 end
             end
         end
-        return((makespan, LS))
+        return(LS)
     end
 end
 
 
-
+function remove_useless_travel(LS::LoadingSequence)
+    if LS.order[end].task.t == 0
+        deleteat!(LS.order, length(LS.order))
+    end
+end
 
 
 

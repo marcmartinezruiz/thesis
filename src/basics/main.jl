@@ -32,7 +32,36 @@ for file in reverse(readdir("../../data/Benchmark/"))
     println("-------------")
     println(file)
     # if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
-    if file[1:3] == "500"
+    if file[1:3] != "100"
+        if file[1:3] == "60C"
+            if file[5:6] == "10"
+                beta = -0.5
+            else
+                beta = 0.25
+            end
+        elseif file[1:3] == "240"
+            if file[6:7] == "20"
+                beta = -0.25
+            else
+                beta = 0.25
+            end
+        elseif file[1:3] == "500"
+            if file[6:7] == "20"
+                beta = 0.75
+            else
+                beta = -0.25
+            end
+        else
+            if file[6:7] == "20"
+                beta = 0.75
+            elseif file[6:7] == "60"
+                beta = 0.5
+            else
+                beta = 0.25
+            end
+        end
+
+
         doc = "../../data/Benchmark/"*file
         C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
 
@@ -73,12 +102,18 @@ for file in reverse(readdir("../../data/Benchmark/"))
         global CTS = Constants(C,P,J,Q,H,tt,d)
         global it_results, best_makespan, best_LS, exec_time
         start = time()
-        # best_makespan, best_LS = GRASP_algorithm(0, prec, task_times, bj, CTS)
-        # it_results, best_makespan, best_LS = GRASP_algorithm(0, prec, task_times, bj, CTS)
-        best_makespan, best_LS = GRASP_multi_thread(0, prec, task_times, bj, CTS)
+        makespan_1, best_LS_1 = GRASP_multi_thread(0 , prec, task_times, bj, CTS)
+        makespan_2, best_LS_2 = GRASP_multi_thread(beta , prec, task_times, bj, CTS)
+        if makespan_1 < makespan_2
+            best_makespan = makespan_1
+            best_LS = best_LS_1
+        else
+            best_makespan = makespan_2
+            best_LS = best_LS_2
+        end
         exec_time = time() - start
         #write_results(doc, it_results)
-        write_time_results(doc, exec_time)
+        # write_time_results(doc, exec_time)
         # best_makespan, best_LS = GRASP_algorithm(0, prec, task_times, bj, CTS)
         println(best_makespan)
         println(exec_time)
@@ -92,7 +127,7 @@ for file in reverse(readdir("../../data/Benchmark/"))
 end
 end
 
-#plot_solution(best_LS, best_makespan, CTS)
+# plot_solution(best_LS, best_makespan, CTS)
 
 
 # LOCAL SEARCH OPTIMIZATION

@@ -47,9 +47,10 @@ function GRASP_single_thread(M1::Number, M2::Number, weights::Array{Float64, 1},
         if best_makespan < M2
             #perform local_search_2
             r = remove_single_moves(prec, best_makespan, best_LS, CTS)
-            return((r[1], r[2], crit, makespan))
+            remove_useless_travel(r)
+            return((total_makespan(r, CTS), r, crit, makespan))
         else
-            return(best_makespan, best_LS, crit, makespan)
+            return((best_makespan, best_LS, crit, makespan))
         end
     else
         return((CTS.H, 0, crit, CTS.H))

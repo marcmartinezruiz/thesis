@@ -386,7 +386,7 @@ function plot_solution(LS::LoadingSequence, makespan::Int, CTS::Constants)
     #plot scale
     xsc  = Scale.x_continuous(minvalue=0, maxvalue=makespan)
     ysc  = Scale.y_continuous(minvalue=0, maxvalue=CTS.J+1)
-    xtk = collect(0:1800:makespan)
+    xtk = collect(0:60:makespan)
     push!(xtk, makespan)
     ytk = collect(1:CTS.J)
     #plot(df, x = :Start, xend = :Time, y = :Bay, yend = :Bay, color = :QuayCrane, Geom.segment(filled=false), Theme(line_width=1cm, major_label_font="CMU Serif",minor_label_font="CMU Serif",

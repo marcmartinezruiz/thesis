@@ -17,7 +17,7 @@ for file in reverse(readdir("../../data/Benchmark/"))
     println("-------------")
     println(file)
     # if file != ".ipynb_checkpoints" && file != "00_DataDescription.txt"
-    if file == "60C_10Type_LessDense_2QC.txt"
+    if file == "240C_60Type_Scattered_2QC.txt"
         doc = "../../data/Benchmark/"*file
         C,P,CP,Q,J,tt,d,ci,pj,bj,prejj,cpij = read_data(doc)
 
@@ -64,7 +64,8 @@ for file in reverse(readdir("../../data/Benchmark/"))
         for (key,value) in tasks_by_w
             LT_min += value.t
         end
-        LB = round((2*LT_min + CTS.tt*(maximum(bj)-minimum(bj)))/CTS.Q)
+        println(LT_min)
+        LB = round((2*LT_min + CTS.tt*(maximum(bj)-minimum(bj)-1))/CTS.Q)
         # print("LT_min ="), print(LT_min), print(",  LB ="), println(LB)
         print("LB ="), println(LB)
         print("UB (H) ="), println(CTS.H)
